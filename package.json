@@ -1,15 +1,22 @@
 {
-  "name": "openapi-codegen",
-  "version": "1.0.0",
+  "name": "openapi2codegen",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx tsc && node dist/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/feifanchi/openapi-codegen"
+  },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "devDependencies": {
     "@types/node": "^24.9.1",
