@@ -81,6 +81,9 @@ export class PropertyType {
 
   initProperty(map: Map<string, SchemaSchema>) {
     if (this.$ref) {
+      if (this.$ref.includes("$$")) {
+        this.$ref = this.$ref.split("$$")[0];
+      }
       this.refSchema = map.get(this.$ref);
     }
     if (this.items) {
@@ -652,6 +655,16 @@ export class OpenApi {
       // schema初始化
       this.refreshSchemaRefDescription(value);
     }
+    // 特殊类($$)型精简
+    for (let [name, schema] of this.schemas.entries()) {
+      if (name.includes('$$')) {
+        let schemaName = name.split('$$')[0];
+        if (!this.schemas.has(schemaName)) {
+          this.schemas.set(schemaName, schema);
+        }
+      }
+    }
+    // 枚举处理
     for (let value of this.schemas.values()) {
       for (let schema of value.getEnumSchemas()) {
         this.enumSchemas.set(schema.name, schema.schema);
@@ -665,6 +678,7 @@ export class OpenApi {
       // schema初始化
       value.initSchema(this.schemas);
     }
+
   }
 
   /**
