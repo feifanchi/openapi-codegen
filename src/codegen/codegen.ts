@@ -43,7 +43,7 @@ export function generateMarkdown(openApi: OpenApi) {
           const schema = openApi.schemas.get(type.name);
           let metas = schema!.getSchemaPropertyMetas(0);
           for (let meta of metas) {
-            markdowns.push(`| ${'&nbsp;'.repeat(meta.level * 2)}${meta.name} | ${meta.description || ''} | ${meta.require} | ${meta.type.type === TypeEnum.INNER ? '' : meta.type.name}${'[]'.repeat(type.arrayLevel)} |`)
+            markdowns.push(`| ${'&nbsp;'.repeat(meta.level * 2)}${meta.name} | ${meta.description || ''} | ${meta.require} | ${meta.type.name}${'[]'.repeat(meta.type.arrayLevel)} |`)
           }
           markdowns.push('\n');
         }

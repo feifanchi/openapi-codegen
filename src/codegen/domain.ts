@@ -412,12 +412,12 @@ export class SchemaSchema extends PropertyType {
       }
     }
     return {
-      codeText: `export interface ${name} {`
-        + propertyCodes.join('\n') + `}`
-        + `export class C${name}{ `
+      codeText: `export interface ${name} {\n`
+        + propertyCodes.join('\n') + `}\n`
+        + `export class C${name}{ \n`
         + propertyCodes.join('\n')
         + `constructor(args:${name}){`
-        + assignCodes.join('\n') + '}\n}',
+        + assignCodes.join('\n') + '}\n}\n',
       importUrls
     }
   }
@@ -678,7 +678,12 @@ export class OpenApi {
       // schema初始化
       value.initSchema(this.schemas);
     }
-
+    // 移除$$类型
+    for (let [name, schema] of this.schemas.entries()) {
+      if (name.includes('$$')) {
+        this.schemas.delete(name);
+      }
+    }
   }
 
   /**
