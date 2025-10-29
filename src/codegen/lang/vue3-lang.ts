@@ -20,8 +20,8 @@ export class Vue3AxiosService {
       let queryParamFlag = false;
       let bodyFlag = false;
       // 参数
+      const params: string[] = [];
       if (method.parameters && method.parameters.length > 0) {
-        const params: string[] = [];
         // 路径参数
         const paths = method.parameters.filter(p => p.in === 'path');
         if (paths.length > 0) {
@@ -43,19 +43,19 @@ export class Vue3AxiosService {
           queryParms.push(`}`);
           params.push(queryParms.join(''));
         }
-        // 请求体
-        if (method.requestBody) {
-          bodyFlag = true;
-          const type = method.requestBody.getTypescriptType();
-          if (type.type === TypeEnum.INNER || type.type === TypeEnum.ENUM) {
-            importInners.add(type.name);
-          } else if (type.type === TypeEnum.OUTER || type.type === TypeEnum.OUTER_NEW) {
-            imports.add(type.importUrl!);
-          }
-          params.push(`data:${type.name}${'[]'.repeat(type.arrayLevel)}`);
-        }
-        rets.push(params.join(','));
       }
+      // 请求体
+      if (method.requestBody) {
+        bodyFlag = true;
+        const type = method.requestBody.getTypescriptType();
+        if (type.type === TypeEnum.INNER || type.type === TypeEnum.ENUM) {
+          importInners.add(type.name);
+        } else if (type.type === TypeEnum.OUTER || type.type === TypeEnum.OUTER_NEW) {
+          imports.add(type.importUrl!);
+        }
+        params.push(`data:${type.name}${'[]'.repeat(type.arrayLevel)}`);
+      }
+      rets.push(params.join(','));
       // 返回值
       if (method.response) {
         const type = method.response.getTypescriptType();
