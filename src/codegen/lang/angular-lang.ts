@@ -9,11 +9,13 @@ export class AngularLang {
     // imports
     rets.push(`import {HttpClient} from '@angular/common/http';\n`)
     rets.push(`import {Observable} from 'rxjs/internal/Observable';\n`)
+    rets.push(`import {Injectable} from '@angular/core';\n`)
     rets.push(`import {map} from 'rxjs';\n`)
     const imports: Set<string> = new Set<string>();
     const importInners: Set<string> = new Set<string>();
     // serice
-    rets.push(`/** ${tag.name} */\n`)
+    rets.push(`/** ${tag.name} */\n`);
+    rets.push(`@Injectable({providedIn: 'root'})\n`);
     rets.push(`export class ${tag.description}Service { constructor(private httpClient:HttpClient){}`);
     for (let method of tag.methods.sort((a, b) => a.operationId.localeCompare(b.operationId))) {
       rets.push(`/** ${method.summary} */\n`)
@@ -100,12 +102,12 @@ export class AngularLang {
 
   private getResponseHandler(level: number, type: TPropertyType): string {
     if (level > 0) {
-      return `res${level}=>res${level}.map(` + this.getResponseHandler(level - 1, type) + ')';
+      return `res${level}=>res${level} && res${level}.map(` + this.getResponseHandler(level - 1, type) + ')';
     }
     if (type.type === TypeEnum.BASIC_NEW || type.type === TypeEnum.OUTER_NEW) {
-      return `res0 => new ${type.name}(res0)`
+      return `res0 => res0 && new ${type.name}(res0)`
     } else if (type.type === TypeEnum.INNER) {
-      return `res0 => new C${type.name}(res0)`
+      return `res0 => res0 && new C${type.name}(res0)`
     } else if (type.type === TypeEnum.ENUM) {
       return `res0 => res0 as ${type.name}`
     }

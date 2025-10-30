@@ -355,12 +355,16 @@ export class SchemaSchema extends PropertyType {
       if (this.required.includes(property)) {
         propertyCodes.push(`${property}: ${type.name}${'[]'.repeat(type.arrayLevel)};`);
       } else {
-        propertyCodes.push(`${property}?: ${type.name}${'[]'.repeat(type.arrayLevel)};`);
+        if (type.arrayLevel > 0) {
+          propertyCodes.push(`${property}?: (${type.name} | null)${'[]'.repeat(type.arrayLevel)};`);
+        } else {
+          propertyCodes.push(`${property}?: ${type.name} | null;`);
+        }
       }
       if (type.arrayLevel) {
-        let itemArray = ".map(item0 =>";
+        let itemArray = ".map(item0 => item0 && ";
         for (let i = 1; i < type.arrayLevel; i++) {
-          itemArray = itemArray + `item${i - 1}.map(item${i} =>`;
+          itemArray = itemArray + `item${i - 1}.map(item${i} =>item${i} && `;
         }
         if (type.type === TypeEnum.BASIC) {
           assignCodes.push(`this.${property} = args.${property};`);

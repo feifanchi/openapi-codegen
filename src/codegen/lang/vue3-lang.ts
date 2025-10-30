@@ -91,22 +91,22 @@ export class Vue3AxiosService {
           imports.add(type.importUrl!);
         }
         if (type.arrayLevel) {
-          let itemArray = ".map(item0 =>";
+          let itemArray = ".map(item0 => item0 && ";
           for (let i = 1; i < type.arrayLevel; i++) {
-            itemArray = itemArray + `item${i - 1}.map(item${i} =>`;
+            itemArray = itemArray + `item${i - 1}.map(item${i} => item${i} && `;
           }
           if (type.type === TypeEnum.BASIC_NEW || type.type === TypeEnum.OUTER_NEW) {
-            rets.push(`.then(res=>res?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
+            rets.push(`.then(res=>res && res?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
           } else if (type.type === TypeEnum.INNER) {
-            rets.push(`.then(res=>res?${itemArray} new C${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)});`);
+            rets.push(`.then(res=>res && res?${itemArray} new C${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)});`);
           } else if (type.type === TypeEnum.ENUM) {
-            rets.push(`.then(res=>res?${itemArray} item${type.arrayLevel - 1} as ${type.name} ${')'.repeat(type.arrayLevel)};`);
+            rets.push(`.then(res=>res && res?${itemArray} item${type.arrayLevel - 1} as ${type.name} ${')'.repeat(type.arrayLevel)};`);
           }
         } else {
           if (type.type === TypeEnum.BASIC_NEW || type.type === TypeEnum.OUTER_NEW) {
-            rets.push(`.then(res=> new ${type.name}(res));`);
+            rets.push(`.then(res=> res && new ${type.name}(res));`);
           } else if (type.type === TypeEnum.INNER) {
-            rets.push(`.then(res=> new C${type.name}(res));`);
+            rets.push(`.then(res=> res && new C${type.name}(res));`);
           } else if (type.type === TypeEnum.ENUM) {
             rets.push(`.then(res=> res as ${type.name});`);
           }
