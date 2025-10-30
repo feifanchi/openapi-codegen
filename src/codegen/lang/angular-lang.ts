@@ -11,6 +11,7 @@ export class AngularLang {
     rets.push(`import {Observable} from 'rxjs/internal/Observable';\n`)
     rets.push(`import {Injectable} from '@angular/core';\n`)
     rets.push(`import {map} from 'rxjs';\n`)
+    rets.push('type AddNullIncludingArrayElements<T> = T extends (infer U)[] ? (AddNullIncludingArrayElements<U> | null)[] : T extends object ? { [K in keyof T]: AddNullIncludingArrayElements<T[K]> | null } : T | null;\n');
     const imports: Set<string> = new Set<string>();
     const importInners: Set<string> = new Set<string>();
     // serice
@@ -41,7 +42,7 @@ export class AngularLang {
         } else if (type.type === TypeEnum.OUTER || type.type === TypeEnum.OUTER_NEW) {
           imports.add(type.importUrl!);
         }
-        params.push(`data:${type.name}${'[]'.repeat(type.arrayLevel)}`);
+        params.push(`data:AddNullIncludingArrayElements<${type.name}>${'[]'.repeat(type.arrayLevel)}`);
       }
       // 查询参数
       const queries = method.parameters?.filter(p => p.in === 'query');

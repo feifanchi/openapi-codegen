@@ -356,9 +356,9 @@ export class SchemaSchema extends PropertyType {
         propertyCodes.push(`${property}: ${type.name}${'[]'.repeat(type.arrayLevel)};`);
       } else {
         if (type.arrayLevel > 0) {
-          propertyCodes.push(`${property}?: (${type.name} | null)${'[]'.repeat(type.arrayLevel)};`);
+          propertyCodes.push(`${property}?: (${type.name})${'[]'.repeat(type.arrayLevel)};`);
         } else {
-          propertyCodes.push(`${property}?: ${type.name} | null;`);
+          propertyCodes.push(`${property}?: ${type.name};`);
         }
       }
       if (type.arrayLevel) {
