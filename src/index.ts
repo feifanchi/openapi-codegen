@@ -5,6 +5,7 @@ import {Vue3AxiosService} from "./codegen/lang/vue3-lang.js";
 import prettier from "prettier";
 import * as prettierPluginTypescript from "prettier/parser-typescript";
 import prettierPluginEstree from "prettier/plugins/estree";
+import {AngularLang} from "./codegen/lang/angular-lang.js";
 // 同步读取
 const data = readFileSync('./openapi-config.json', 'utf8');
 const config = JSON.parse(data);
@@ -29,6 +30,8 @@ for (const group of (config["groups"] as string[])) {
   let service;
   if (lang === "vue3axios") {
     service = new Vue3AxiosService();
+  } else if (lang === "angular") {
+    service = new AngularLang();
   } else {
     throw new Error(`${lang} not support`);
   }
@@ -41,7 +44,6 @@ for (const group of (config["groups"] as string[])) {
 }
 // 生成markdown
 writeFileSync(`${outdir}/openapi.md`, markdowns.join('\n'));
-
 
 async function format(text: string, config: any) {
   return await prettier.format(text, {

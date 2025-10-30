@@ -21,27 +21,12 @@ export class Vue3AxiosService {
       let bodyFlag = false;
       // 参数
       const params: string[] = [];
-      if (method.parameters && method.parameters.length > 0) {
-        // 路径参数
-        const paths = method.parameters.filter(p => p.in === 'path');
-        if (paths.length > 0) {
-          for (let path of paths) {
-            const t = (path.schema as SchemaSchema).getTypescriptType();
-            params.push(`${path.name}:${t.name}`)
-          }
-        }
-        // 查询参数
-        const queries = method.parameters.filter(p => p.in === 'query');
-        const queryParms: string[] = [];
-        if (queries.length > 0) {
-          queryParamFlag = true;
-          queryParms.push(`params:{`)
-          for (let query of queries) {
-            const t = (query.schema as SchemaSchema).getTypescriptType();
-            queryParms.push(`${query.name}:${t.name}${'[]'.repeat(t.arrayLevel)},`)
-          }
-          queryParms.push(`}`);
-          params.push(queryParms.join(''));
+      // 路径参数
+      const paths = method.parameters?.filter(p => p.in === 'path');
+      if (paths && paths.length > 0) {
+        for (let path of paths) {
+          const t = (path.schema as SchemaSchema).getTypescriptType();
+          params.push(`${path.name}:${t.name}`)
         }
       }
       // 请求体
@@ -54,6 +39,19 @@ export class Vue3AxiosService {
           imports.add(type.importUrl!);
         }
         params.push(`data:${type.name}${'[]'.repeat(type.arrayLevel)}`);
+      }
+      // 查询参数
+      const queries = method.parameters?.filter(p => p.in === 'query');
+      const queryParms: string[] = [];
+      if (queries && queries.length > 0) {
+        queryParamFlag = true;
+        queryParms.push(`params:{`)
+        for (let query of queries) {
+          const t = (query.schema as SchemaSchema).getTypescriptType();
+          queryParms.push(`${query.name}:${t.name}${'[]'.repeat(t.arrayLevel)},`)
+        }
+        queryParms.push(`}`);
+        params.push(queryParms.join(''));
       }
       rets.push(params.join(','));
       // 返回值
