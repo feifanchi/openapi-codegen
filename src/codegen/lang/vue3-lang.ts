@@ -69,13 +69,15 @@ export class Vue3AxiosService {
       } else {
         rets.push(`return service.${method.requestMethod}<void>(` + '`' + path + '`' + ``);
       }
-      if (queryParamFlag || bodyFlag) {
+      if (bodyFlag) {
+        rets.push(`,data`)
+      } else if (method.requestMethod !== 'get' && method.requestMethod !== 'head' && method.requestMethod !== 'delete' && method.requestMethod !== 'options') {
+        rets.push(`,{}`)
+      }
+      if (queryParamFlag) {
         rets.push(`,{`)
         if (queryParamFlag) {
           rets.push(`params,`)
-        }
-        if (bodyFlag) {
-          rets.push(`data,`)
         }
         rets.push(`}`)
       }
