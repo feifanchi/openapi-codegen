@@ -1,3 +1,5 @@
+export const CONFIG: { decimalFlag: boolean } = {decimalFlag: true};
+
 export interface IPropertyType {
   /** 类型 */
   type?: string;
@@ -141,12 +143,19 @@ export class PropertyType {
           arrayLevel: level, description: this.description
         }
       }
-      return {
-        name: 'Decimal',
-        type: TypeEnum.OUTER_NEW,
-        importUrl: "import Decimal from 'decimal.js';",
-        arrayLevel: level,
-        description: this.description
+      if (CONFIG.decimalFlag) {
+        return {
+          name: 'Decimal',
+          type: TypeEnum.OUTER_NEW,
+          importUrl: "import Decimal from 'decimal.js';",
+          arrayLevel: level,
+          description: this.description
+        }
+      } else {
+        return {
+          name: 'number', type: TypeEnum.BASIC,
+          arrayLevel: level, description: this.description
+        }
       }
     } else if (this.type === 'string') {
       if (this.format === 'date' || this.format === 'date-time') {

@@ -6,6 +6,7 @@ import prettier from "prettier";
 import * as prettierPluginTypescript from "prettier/parser-typescript";
 import prettierPluginEstree from "prettier/plugins/estree";
 import {AngularLang} from "./codegen/lang/angular-lang.js";
+import {CONFIG} from "./codegen/domain.js";
 // 同步读取
 const data = readFileSync('./openapi-config.json', 'utf8');
 const config = JSON.parse(data);
@@ -13,6 +14,7 @@ const config = JSON.parse(data);
 const markdowns: string[] = [];
 const outdir: string = config["outdir"];
 const lang: string = config["lang"];
+CONFIG.decimalFlag = !!config["decimal"];
 const prettierConf: any = config["config"];
 mkdirSync(outdir, {recursive: true});
 for (const group of (config["groups"] as string[])) {
