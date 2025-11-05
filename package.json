@@ -1,6 +1,6 @@
 {
   "name": "openapi2codegen",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "",
   "bin": {
     "openapi2codegen": "dist/index.js"

@@ -41,6 +41,8 @@ export interface TPropertyType {
   type: TypeEnum;
   /** 描述 */
   description?: string;
+  /** 代码生成 */
+  codeGen: (variableName: string) => string;
 }
 
 /** 属性类型 */
@@ -112,7 +114,10 @@ export class PropertyType {
         arrayLevel: arrayType.arrayLevel,
         type: arrayType.type,
         importUrl: arrayType.importUrl,
-        description: this.description
+        description: this.description,
+        codeGen: (variableName) => {
+          return variableName + '?.map(item' + level + '=>' + arrayType.codeGen('item' + level) + ')';
+        },
       }
     }
     // 枚举类型
@@ -121,26 +126,30 @@ export class PropertyType {
         name: this.enumName,
         type: TypeEnum.ENUM,
         arrayLevel: level,
-        description: this.description
+        description: this.description,
+        codeGen: (variableName) => `${variableName} as  ${this.enumName}`,
       }
     }
     if (this.type === 'integer') {
       if (this.format === 'int32') {
         return {
           name: 'number', type: TypeEnum.BASIC,
-          arrayLevel: level, description: this.description
+          arrayLevel: level, description: this.description,
+          codeGen: (variableName) => `${variableName}`,
         };
       } else if (this.format === 'int64') {
         return {
           name: 'string', type: TypeEnum.BASIC,
-          arrayLevel: level, description: this.description
+          arrayLevel: level, description: this.description,
+          codeGen: (variableName) => `${variableName}`,
         };
       }
     } else if (this.type == 'number') {
       if (this.format === 'float' || this.format === 'double') {
         return {
           name: 'number', type: TypeEnum.BASIC,
-          arrayLevel: level, description: this.description
+          arrayLevel: level, description: this.description,
+          codeGen: (variableName) => `${variableName}`,
         }
       }
       if (CONFIG.decimalFlag) {
@@ -149,43 +158,59 @@ export class PropertyType {
           type: TypeEnum.OUTER_NEW,
           importUrl: "import Decimal from 'decimal.js';",
           arrayLevel: level,
-          description: this.description
+          description: this.description,
+          codeGen: (variableName) => `${variableName} ?? new Decimal(${variableName})`,
         }
       } else {
         return {
           name: 'number', type: TypeEnum.BASIC,
-          arrayLevel: level, description: this.description
+          arrayLevel: level, description: this.description,
+          codeGen: (variableName) => `${variableName}`,
         }
       }
     } else if (this.type === 'string') {
-      if (this.format === 'date' || this.format === 'date-time') {
+      if (this.format === 'date-time') {
+        return {
+          name: 'Date',
+          type: TypeEnum.BASIC_NEW,
+          arrayLevel: level,
+          description: this.description,
+          codeGen: (variableName) => `${variableName} ?? new Date(${variableName})`,
+        }
+      } else if (this.format === 'date') {
         return {
           name: 'Date', type: TypeEnum.BASIC_NEW,
-          arrayLevel: level, description: this.description
+          arrayLevel: level, description: this.description,
+          codeGen: (variableName) => `${variableName} && new Date(${variableName} +" 00:00:00")`,
         }
+
       }
       return {
         name: 'string', type: TypeEnum.BASIC,
-        arrayLevel: level, description: this.description
+        arrayLevel: level, description: this.description,
+        codeGen: (variableName) => `${variableName}`,
       }
     } else if (this.type === 'boolean') {
       return {
         name: 'boolean', type: TypeEnum.BASIC,
-        arrayLevel: level, description: this.description
+        arrayLevel: level, description: this.description,
+        codeGen: (variableName) => `${variableName}`,
       }
     }
     // 引用类型
     if (this.$ref) {
       return {
         name: this.$ref, type: TypeEnum.INNER,
-        arrayLevel: level, description: this.description
+        arrayLevel: level, description: this.description,
+        codeGen: (variableName) => `${variableName} ?? new C${this.$ref}(${variableName})`,
       }
     }
     // object
     if (this.type === 'object') {
       return {
         name: 'any', type: TypeEnum.BASIC,
-        arrayLevel: level, description: this.description
+        arrayLevel: level, description: this.description,
+        codeGen: (variableName) => `${variableName}`,
       };
     }
     throw new Error(`不支持的类型:${JSON.stringify(this)}`);
@@ -370,44 +395,45 @@ export class SchemaSchema extends PropertyType {
           propertyCodes.push(`${property}?: ${type.name};`);
         }
       }
-      if (type.arrayLevel) {
-        let itemArray = ".map(item0 => item0 && ";
-        for (let i = 1; i < type.arrayLevel; i++) {
-          itemArray = itemArray + `item${i - 1}.map(item${i} =>item${i} && `;
-        }
-        if (type.type === TypeEnum.BASIC) {
-          assignCodes.push(`this.${property} = args.${property};`);
-        } else if (type.type === TypeEnum.BASIC_NEW) {
-          assignCodes.push(`this.${property} = args.${property}?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
-        } else if (type.type === TypeEnum.INNER) {
-          assignCodes.push(`this.${property} = args.${property}?${itemArray} new C${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
-        } else if (type.type === TypeEnum.OUTER_NEW) {
-          importUrls.push(type.importUrl!);
-          assignCodes.push(`this.${property} = args.${property}?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
-        } else if (type.type === TypeEnum.OUTER) {
-          importUrls.push(type.importUrl!);
-          assignCodes.push(`this.${property} = args.${property};`);
-        } else if (type.type === TypeEnum.ENUM) {
-          assignCodes.push(`this.${property} = args.${property}?.map(item => item as ${type.name});`);
-        }
-      } else {
-        if (type.type === TypeEnum.INNER) {
-          importUrls.push(type.importUrl!);
-          assignCodes.push(`this.${property} = args.${property} && new C${type.name}(args.${property});`);
-        } else if (type.type === TypeEnum.ENUM) {
-          assignCodes.push(`this.${property} = args.${property} as ${type.name};`);
-        } else if (type.type === TypeEnum.OUTER_NEW) {
-          importUrls.push(type.importUrl!);
-          assignCodes.push(`this.${property} = args.${property} && new ${type.name}(args.${property});`);
-        } else if (type.type === TypeEnum.BASIC) {
-          assignCodes.push(`this.${property} = args.${property};`);
-        } else if (type.type === TypeEnum.BASIC_NEW) {
-          assignCodes.push(`this.${property} = args.${property} && new ${type.name}(args.${property});`);
-        } else if (type.type === TypeEnum.OUTER) {
-          importUrls.push(type.importUrl!);
-          assignCodes.push(`this.${property} = args.${property};`);
-        }
-      }
+      assignCodes.push(`this.${property} =` + type.codeGen(`args.${property}`) + ";");
+      // if (type.arrayLevel) {
+      //   let itemArray = ".map(item0 => item0 && ";
+      //   for (let i = 1; i < type.arrayLevel; i++) {
+      //     itemArray = itemArray + `item${i - 1}.map(item${i} =>item${i} && `;
+      //   }
+      //   if (type.type === TypeEnum.BASIC) {
+      //     assignCodes.push(`this.${property} = args.${property};`);
+      //   } else if (type.type === TypeEnum.BASIC_NEW) {
+      //     assignCodes.push(`this.${property} = args.${property}?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
+      //   } else if (type.type === TypeEnum.INNER) {
+      //     assignCodes.push(`this.${property} = args.${property}?${itemArray} new C${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
+      //   } else if (type.type === TypeEnum.OUTER_NEW) {
+      //     importUrls.push(type.importUrl!);
+      //     assignCodes.push(`this.${property} = args.${property}?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
+      //   } else if (type.type === TypeEnum.OUTER) {
+      //     importUrls.push(type.importUrl!);
+      //     assignCodes.push(`this.${property} = args.${property};`);
+      //   } else if (type.type === TypeEnum.ENUM) {
+      //     assignCodes.push(`this.${property} = args.${property}?.map(item => item as ${type.name});`);
+      //   }
+      // } else {
+      //   if (type.type === TypeEnum.INNER) {
+      //     importUrls.push(type.importUrl!);
+      //     assignCodes.push(`this.${property} = args.${property} && new C${type.name}(args.${property});`);
+      //   } else if (type.type === TypeEnum.ENUM) {
+      //     assignCodes.push(`this.${property} = args.${property} as ${type.name};`);
+      //   } else if (type.type === TypeEnum.OUTER_NEW) {
+      //     importUrls.push(type.importUrl!);
+      //     assignCodes.push(`this.${property} = args.${property} && new ${type.name}(args.${property});`);
+      //   } else if (type.type === TypeEnum.BASIC) {
+      //     assignCodes.push(`this.${property} = args.${property};`);
+      //   } else if (type.type === TypeEnum.BASIC_NEW) {
+      //     assignCodes.push(`this.${property} = args.${property} && new ${type.name}(args.${property});`);
+      //   } else if (type.type === TypeEnum.OUTER) {
+      //     importUrls.push(type.importUrl!);
+      //     assignCodes.push(`this.${property} = args.${property};`);
+      //   }
+      // }
     }
     // 特异化处理
     if (name.endsWith("Model") && this.properties.has('logics') && !this.properties.has("name")) {
