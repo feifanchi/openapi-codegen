@@ -159,7 +159,7 @@ export class PropertyType {
           importUrl: "import Decimal from 'decimal.js';",
           arrayLevel: level,
           description: this.description,
-          codeGen: (variableName) => `${variableName} ?? new Decimal(${variableName})`,
+          codeGen: (variableName) => `${variableName} || ${variableName} ===0 ? new Decimal(${variableName}: new Decimal(0)`,
         }
       } else {
         return {
@@ -175,7 +175,7 @@ export class PropertyType {
           type: TypeEnum.BASIC_NEW,
           arrayLevel: level,
           description: this.description,
-          codeGen: (variableName) => `${variableName} ?? new Date(${variableName})`,
+          codeGen: (variableName) => `${variableName} && new Date(${variableName})`,
         }
       } else if (this.format === 'date') {
         return {
@@ -202,7 +202,7 @@ export class PropertyType {
       return {
         name: this.$ref, type: TypeEnum.INNER,
         arrayLevel: level, description: this.description,
-        codeGen: (variableName) => `${variableName} ?? new C${this.$ref}(${variableName})`,
+        codeGen: (variableName) => `${variableName} && new C${this.$ref}(${variableName})`,
       }
     }
     // object
@@ -325,7 +325,7 @@ export class SchemaSchema extends PropertyType {
   getSchemaPropertyMetas(level: number, fetcheds: Set<string> = new Set<string>()): SchemaPropertyMeta[] {
     const res: SchemaPropertyMeta[] = [];
     for (let [name, property] of this.properties) {
-      let require = this.required.includes(name);
+      let require = this.required.length === 0 || this.required.includes(name);
       let type = property.getTypescriptType();
       // 名称，描述，是否必填，类型
       res.push({
@@ -386,7 +386,7 @@ export class SchemaSchema extends PropertyType {
     for (let [property, propertyType] of this.properties) {
       let type = propertyType.getTypescriptType();
       propertyCodes.push(`/** ${type.description} */`)
-      if (this.required.includes(property)) {
+      if (this.required.length === 0 || this.required.includes(property)) {
         propertyCodes.push(`${property}: ${type.name}${'[]'.repeat(type.arrayLevel)};`);
       } else {
         if (type.arrayLevel > 0) {
@@ -396,44 +396,6 @@ export class SchemaSchema extends PropertyType {
         }
       }
       assignCodes.push(`this.${property} =` + type.codeGen(`args.${property}`) + ";");
-      // if (type.arrayLevel) {
-      //   let itemArray = ".map(item0 => item0 && ";
-      //   for (let i = 1; i < type.arrayLevel; i++) {
-      //     itemArray = itemArray + `item${i - 1}.map(item${i} =>item${i} && `;
-      //   }
-      //   if (type.type === TypeEnum.BASIC) {
-      //     assignCodes.push(`this.${property} = args.${property};`);
-      //   } else if (type.type === TypeEnum.BASIC_NEW) {
-      //     assignCodes.push(`this.${property} = args.${property}?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
-      //   } else if (type.type === TypeEnum.INNER) {
-      //     assignCodes.push(`this.${property} = args.${property}?${itemArray} new C${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
-      //   } else if (type.type === TypeEnum.OUTER_NEW) {
-      //     importUrls.push(type.importUrl!);
-      //     assignCodes.push(`this.${property} = args.${property}?${itemArray} new ${type.name}(item${type.arrayLevel - 1})${')'.repeat(type.arrayLevel)};`);
-      //   } else if (type.type === TypeEnum.OUTER) {
-      //     importUrls.push(type.importUrl!);
-      //     assignCodes.push(`this.${property} = args.${property};`);
-      //   } else if (type.type === TypeEnum.ENUM) {
-      //     assignCodes.push(`this.${property} = args.${property}?.map(item => item as ${type.name});`);
-      //   }
-      // } else {
-      //   if (type.type === TypeEnum.INNER) {
-      //     importUrls.push(type.importUrl!);
-      //     assignCodes.push(`this.${property} = args.${property} && new C${type.name}(args.${property});`);
-      //   } else if (type.type === TypeEnum.ENUM) {
-      //     assignCodes.push(`this.${property} = args.${property} as ${type.name};`);
-      //   } else if (type.type === TypeEnum.OUTER_NEW) {
-      //     importUrls.push(type.importUrl!);
-      //     assignCodes.push(`this.${property} = args.${property} && new ${type.name}(args.${property});`);
-      //   } else if (type.type === TypeEnum.BASIC) {
-      //     assignCodes.push(`this.${property} = args.${property};`);
-      //   } else if (type.type === TypeEnum.BASIC_NEW) {
-      //     assignCodes.push(`this.${property} = args.${property} && new ${type.name}(args.${property});`);
-      //   } else if (type.type === TypeEnum.OUTER) {
-      //     importUrls.push(type.importUrl!);
-      //     assignCodes.push(`this.${property} = args.${property};`);
-      //   }
-      // }
     }
     // 特异化处理
     if (name.endsWith("Model") && this.properties.has('logics') && !this.properties.has("name")) {
