@@ -8,6 +8,8 @@ export class Vue3AxiosService {
     const rets: string[] = [];
     // imports
     rets.push(`import service from "../service.js";\n`)
+    rets.push('type AddNullIncludingArrayElements<T> = T extends (infer U)[] ? (AddNullIncludingArrayElements<U> | null)[] : T extends object ? { [K in keyof T]: AddNullIncludingArrayElements<T[K]> | null } : T | null;\n');
+    rets.push('type AddNullUndefinedIncludingArrayElements<T> = T extends (infer U)[] ? (AddNullUndefinedIncludingArrayElements<U> | null)[] : T extends object ? { [K in keyof T]?: AddNullIncludingArrayElements<T[K]> | null } : T | null;\n');
     const imports: Set<string> = new Set<string>();
     const importInnerClasses: Set<string> = new Set<string>();
     const importInners: Set<string> = new Set<string>();
@@ -38,7 +40,11 @@ export class Vue3AxiosService {
         } else if (type.type === TypeEnum.OUTER || type.type === TypeEnum.OUTER_NEW) {
           imports.add(type.importUrl!);
         }
-        params.push(`data:${type.name}${'[]'.repeat(type.arrayLevel)}`);
+        if (method.requestPath.includes('/search/')) {
+          params.push(`data:AddNullUndefinedIncludingArrayElements<${type.name}>${'[]'.repeat(type.arrayLevel)}`);
+        } else {
+          params.push(`data:AddNullIncludingArrayElements<${type.name}>${'[]'.repeat(type.arrayLevel)}`);
+        }
       }
       // 查询参数
       const queries = method.parameters?.filter(p => p.in === 'query');
