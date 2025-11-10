@@ -95,6 +95,15 @@ export class PropertyType {
     }
   }
 
+  initReturnTypeFlag() {
+    if (this.items) {
+      this.items.initReturnTypeFlag();
+    }
+    if (this.refSchema) {
+      this.refSchema.initReturnTypeFlag();
+    }
+  }
+
   getEnumSchema(): { name: string; schema: EnumSchema } | undefined {
     if (this.enumName) {
       return {
@@ -367,10 +376,16 @@ export class SchemaSchema extends PropertyType {
   /**
    * 初始化设置返回值类型标志
    */
-  initReturnTypeFlag() {
+  override initReturnTypeFlag() {
     this.returnTypeFlag = true;
     for (let property of this.properties.values()) {
-      if (property.refSchema) {
+      if (property.items?.refSchema) {
+        if (property.items.refSchema.returnTypeFlag) {
+          // 如果已经设置则不在递归设置
+          continue;
+        }
+        property.items.refSchema.initReturnTypeFlag();
+      } else if (property.refSchema) {
         if (property.refSchema.returnTypeFlag) {
           // 如果已经设置则不在递归设置
           continue;
@@ -674,16 +689,6 @@ export class OpenApi {
       // schema初始化
       this.refreshSchemaRefDescription(value);
     }
-    // 设置返回值
-    for (let tag of this.tags) {
-      for (let method of tag.methods) {
-        if (method.requestBody?.refSchema) {
-          // 递归设置返回值
-          method.requestBody.refSchema.initReturnTypeFlag();
-        }
-      }
-    }
-
     // 特殊类($$)型精简
     for (let [name, schema] of this.schemas.entries()) {
       if (name.includes('$$')) {
@@ -706,6 +711,15 @@ export class OpenApi {
     for (let value of this.schemas.values()) {
       // schema初始化
       value.initSchema(this.schemas);
+    }
+    // 设置返回值
+    for (let tag of this.tags) {
+      for (let method of tag.methods) {
+        if (method.response) {
+          // 递归设置返回值
+          method.response.initReturnTypeFlag();
+        }
+      }
     }
     // 移除$$类型
     for (let [name, schema] of this.schemas.entries()) {
