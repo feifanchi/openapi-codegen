@@ -293,6 +293,8 @@ export interface SchemaPropertyMeta {
  */
 export class SchemaSchema extends PropertyType {
   required: string[];
+  // 是否是返回值；如果是返回值，则返回值类型且required长队为0，则类型不设置undefined
+  returnTypeFlag: boolean = false;
   properties: Map<string, PropertyType> = new Map<string, PropertyType>();
 
   constructor(arg: ISchema) {
@@ -325,7 +327,7 @@ export class SchemaSchema extends PropertyType {
   getSchemaPropertyMetas(level: number, fetcheds: Set<string> = new Set<string>()): SchemaPropertyMeta[] {
     const res: SchemaPropertyMeta[] = [];
     for (let [name, property] of this.properties) {
-      let require = this.required.length === 0 || this.required.includes(name);
+      let require = (this.required.length === 0 && this.returnTypeFlag) || this.required.includes(name);
       let type = property.getTypescriptType();
       // 名称，描述，是否必填，类型
       res.push({
@@ -362,6 +364,22 @@ export class SchemaSchema extends PropertyType {
     }
   }
 
+  /**
+   * 初始化设置返回值类型标志
+   */
+  initReturnTypeFlag() {
+    this.returnTypeFlag = true;
+    for (let property of this.properties.values()) {
+      if (property.refSchema) {
+        if (property.refSchema.returnTypeFlag) {
+          // 如果已经设置则不在递归设置
+          continue;
+        }
+        property.refSchema.initReturnTypeFlag();
+      }
+    }
+  }
+
   getDescription(): string | undefined {
     return this.description;
   }
@@ -385,8 +403,8 @@ export class SchemaSchema extends PropertyType {
     let assignCodes: string[] = [];
     for (let [property, propertyType] of this.properties) {
       let type = propertyType.getTypescriptType();
-      propertyCodes.push(`/** ${type.description} */`)
-      if (this.required.length === 0 || this.required.includes(property)) {
+      propertyCodes.push(`/** ${type.description} */`);
+      if ((this.required.length === 0 && this.returnTypeFlag) || this.required.includes(property)) {
         propertyCodes.push(`${property}: ${type.name}${'[]'.repeat(type.arrayLevel)};`);
       } else {
         if (type.arrayLevel > 0) {
@@ -656,6 +674,16 @@ export class OpenApi {
       // schema初始化
       this.refreshSchemaRefDescription(value);
     }
+    // 设置返回值
+    for (let tag of this.tags) {
+      for (let method of tag.methods) {
+        if (method.requestBody?.refSchema) {
+          // 递归设置返回值
+          method.requestBody.refSchema.initReturnTypeFlag();
+        }
+      }
+    }
+
     // 特殊类($$)型精简
     for (let [name, schema] of this.schemas.entries()) {
       if (name.includes('$$')) {
