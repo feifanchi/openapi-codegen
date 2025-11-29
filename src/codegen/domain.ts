@@ -693,9 +693,10 @@ export class OpenApi {
     for (let [name, schema] of this.schemas.entries()) {
       if (name.includes('$$')) {
         let schemaName = name.split('$$')[0];
-        if (!this.schemas.has(schemaName)) {
-          this.schemas.set(schemaName, schema);
+        if (this.schemas.has(schemaName) && this.schemas.get(schemaName)?.properties?.size) {
+          continue;
         }
+        this.schemas.set(schemaName, schema);
       }
     }
     // 枚举处理
