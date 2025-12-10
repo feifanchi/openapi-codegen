@@ -132,7 +132,7 @@ export class PropertyType {
     // 枚举类型
     if (this.enumName) {
       return {
-        name: this.enumName,
+        name: this.enumName + '| string',
         type: TypeEnum.ENUM,
         arrayLevel: level,
         description: this.description,
