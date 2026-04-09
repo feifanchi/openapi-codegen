@@ -10,8 +10,6 @@ import {CONFIG} from "./codegen/domain.js";
 // 同步读取
 const data = readFileSync('./openapi-config.json', 'utf8');
 const config = JSON.parse(data);
-// markdown文件
-const markdowns: string[] = [];
 const outdir: string = config["outdir"];
 const lang: string = config["lang"];
 CONFIG.decimalFlag = !!config["decimal"];
@@ -22,9 +20,9 @@ for (const group of (config["groups"] as string[])) {
   // 创建文件夹
   mkdirSync(`${outdir}/${groupName}`, {recursive: true});
   const openApi = await fetchOpenApi(group);
-  // markdown
-  markdowns.push(`# ${groupName}\n`);
-  markdowns.push(generateMarkdown(openApi));
+  // 为每个 group 生成独立的 markdown 文件
+  const markdownContent = `# ${groupName}\n\n${generateMarkdown(openApi)}`;
+  writeFileSync(`${outdir}/${groupName}/${groupName}.md`, markdownContent);
   // domain.ts文件
   const domainCode = generateDomainCode(openApi);
   writeFileSync(`${outdir}/${groupName}/${groupName}-domain.ts`, await format(domainCode, prettierConf));
@@ -44,8 +42,6 @@ for (const group of (config["groups"] as string[])) {
   writeFileSync(`${outdir}/${groupName}/${groupName}-md5-code.ts`, await format(
     generateServiceMd5Code(openApi), prettierConf));
 }
-// 生成markdown
-writeFileSync(`${outdir}/openapi.md`, markdowns.join('\n'));
 
 async function format(text: string, config: any) {
   return await prettier.format(text, {
