@@ -38,12 +38,12 @@ export function generateMarkdown(openApi: OpenApi) {
         const type = method.requestBody.getTypescriptType();
         markdowns.push(`**请求体** ${type.name}${'[]'.repeat(type.arrayLevel)}\n`);
         if (type.type === TypeEnum.INNER) {
-          markdowns.push(`| 参数名 | 描述 | 是否必填 | 数据类型 |`);
-          markdowns.push(`| --- | --- | --- | --- |`);
+          markdowns.push(`| 参数名 | 描述 | 是否必填 | 长度 | 数据类型 |`);
+          markdowns.push(`| --- | --- | --- | --- | --- |`);
           const schema = openApi.schemas.get(type.name);
           let metas = schema!.getSchemaPropertyMetas(0);
           for (let meta of metas) {
-            markdowns.push(`| ${'&nbsp;'.repeat(meta.level * 2)}${meta.name} | ${meta.description || ''} | ${meta.require} | ${meta.type.name}${'[]'.repeat(meta.type.arrayLevel)} |`)
+            markdowns.push(`| ${'&nbsp;'.repeat(meta.level * 2)}${meta.name} | ${meta.description || ''} | ${meta.require}  | ${meta.maxLength || ''} | ${meta.type.name}${'[]'.repeat(meta.type.arrayLevel)} |`)
           }
           markdowns.push('\n');
         }

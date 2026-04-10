@@ -13,6 +13,10 @@ export interface IPropertyType {
   description?: string;
   /** 枚举 */
   enum?: string[];
+  /** 最大长度 */
+  maxLength?: number;
+  /** 最小长度 */
+  minLength?: number;
 }
 
 export enum TypeEnum {
@@ -41,6 +45,10 @@ export interface TPropertyType {
   type: TypeEnum;
   /** 描述 */
   description?: string;
+  /** 最大长度 */
+  maxLength?: number;
+  /** 最小长度 */
+  minLength?: number;
   /** 代码生成 */
   codeGen: (variableName: string) => string;
 }
@@ -61,6 +69,10 @@ export class PropertyType {
   description?: string;
   /** 枚举名称 */
   enumName?: string;
+  /** 最大长度 */
+  maxLength?: number;
+  /** 最小长度 */
+  minLength?: number;
   /** 枚举 */
   enums?: { code: string, description?: string }[];
 
@@ -81,6 +93,8 @@ export class PropertyType {
         this.enums.push({code: items[0], description: items?.[1]});
       }
     }
+    this.maxLength = arg.maxLength;
+    this.minLength = arg.minLength;
   }
 
   initProperty(map: Map<string, SchemaSchema>) {
@@ -293,6 +307,10 @@ export interface SchemaPropertyMeta {
   description?: string;
   /** 是否必填 */
   require: boolean;
+  /** 最大长度 */
+  maxLength?: number;
+  /** 最小长度 */
+  minLength?: number;
   /** 类型 */
   type: TPropertyType
 }
@@ -344,6 +362,8 @@ export class SchemaSchema extends PropertyType {
         type,
         require,
         description: property.description,
+        maxLength: property.maxLength,
+        minLength: property.minLength,
         level,
       });
       if (type.type === TypeEnum.INNER) {
