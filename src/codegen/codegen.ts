@@ -28,6 +28,11 @@ export function generateMarkdown(openApi: OpenApi): [string, string] {
       // 请求方式
       markdownsWithExample.push(`**请求方式:** ${method.requestMethod}\n`);
       markdownsWithoutExample.push(`**请求方式:** ${method.requestMethod}\n`);
+      // md5
+      const md5Code = CryptoJS.MD5(method.requestMethod.toUpperCase() + reorderPathSegments(method.requestPath)).toString()
+        .substring(8, 24).toLowerCase();
+      markdownsWithExample.push(`**权限编码:** ${md5Code}\n`);
+      markdownsWithoutExample.push(`**权限编码:** ${md5Code}\n`);
       if (method.parameters && method.parameters.length > 0) {
         // 请求参数
         markdownsWithExample.push(`**请求参数**\n`);
