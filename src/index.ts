@@ -15,13 +15,16 @@ const lang: string = config["lang"];
 CONFIG.decimalFlag = !!config["decimal"];
 const prettierConf: any = config["config"];
 mkdirSync(outdir, {recursive: true});
+let markdowns: string[] = [];
 for (const group of (config["groups"] as string[])) {
   const groupName = group.split('/').pop();
   // 创建文件夹
   mkdirSync(`${outdir}/${groupName}`, {recursive: true});
   const openApi = await fetchOpenApi(group);
   // 为每个 group 生成独立的 markdown 文件
-  const markdownContent = `# ${groupName}\n\n${generateMarkdown(openApi)}`;
+  let markdownRets = generateMarkdown(openApi);
+  const markdownContent = `# ${groupName}\n\n${markdownRets[1]}`;
+  markdowns.push(`# ${groupName}\n\n${markdownRets[0]}`);
   writeFileSync(`${outdir}/${groupName}/${groupName}.md`, markdownContent);
   // domain.ts文件
   const domainCode = generateDomainCode(openApi);
@@ -42,6 +45,8 @@ for (const group of (config["groups"] as string[])) {
   writeFileSync(`${outdir}/${groupName}/${groupName}-md5-code.ts`, await format(
     generateServiceMd5Code(openApi), prettierConf));
 }
+writeFileSync(`${outdir}/README.md`, markdowns.join('\n\n'), prettierConf);
+
 
 async function format(text: string, config: any) {
   return await prettier.format(text, {
