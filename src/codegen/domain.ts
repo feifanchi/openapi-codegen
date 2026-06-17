@@ -139,7 +139,8 @@ export class PropertyType {
         importUrl: arrayType.importUrl,
         description: this.description,
         codeGen: (variableName) => {
-          return variableName + '?.map(item' + level + '=>' + arrayType.codeGen('item' + level) + ')';
+          // 如果数组不存在则换成[]
+          return '(' + variableName + '??[]).map(item' + level + '=>' + arrayType.codeGen('item' + level) + ')';
         },
       }
     }
@@ -241,7 +242,7 @@ export class PropertyType {
 
   getExample(fetcheds: Set<string> = new Set<string>()): any {
     // 枚举类型
-    if (this.enumName) {
+    if (this.enumName && this.enums?.[0]) {
       return this.enums![0].code;
     }
     if (this.type === 'integer') {
